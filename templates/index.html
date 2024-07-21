@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>四色牌</title>
+    <style>
+        /* General styles */
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        h1 {
+            margin-top: 20px;
+        }
+
+        #players-table {
+            margin: 10px;
+            border-collapse: collapse;
+            max-width: 100%; 
+            vertical-align: middle;
+        }
+
+        th, td {
+            border: 1px solid black;
+            padding: 5px; /* Reduced padding */
+            margin: 10px;
+            text-align: center;
+            
+        }
+
+        input {
+            margin: 3px;
+        }
+        
+        .custom-checkbox {
+            margin-bottom: 15px;
+            margin-top: 10px;
+            display: inline-block;
+            width: 24px; /* Width of your custom checkbox */
+            height: 24px; /* Height of your custom checkbox */
+            position: relative;
+            cursor: pointer;
+            text-align: center;
+            align-items: center;
+        }
+        .custom-checkbox input {
+            opacity: 0; /* Hide the actual checkbox */
+            width: 0;
+            height: 0;
+        }
+        .custom-checkbox .checkbox-icon {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #fff; /* Background color of the custom checkbox */
+            border: 1px solid #ccc; /* Border color of the custom checkbox */
+        }
+        .custom-checkbox input:checked + .checkbox-icon::after {
+            content: '\2714'; /* Unicode check mark symbol */
+            font-size: 18px; /* Size of the check mark */
+            color: #007bff; /* Color of the check mark */
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        button {
+            padding: 10px 20px; 
+            font-size: 16px; 
+            background-color: #ffffff;
+            color: #000000;
+            border-color: #000000;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        /* Responsive styles */
+        @media (max-width: 600px) {
+            /* Adjust font sizes for smaller screens */
+            th, td {
+                font-size: 12px; /* Reduce font size further */
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>四色牌</h1>
+    <h2>Players</h2>
+    <table id="players-table">
+        <thead>
+            <tr>
+                <th>Player</th>
+                <th>Starting Balance</th>
+                <th>Final Balance</th>
+                <th>Net Balance</th>
+                <th>Single Wins</th>
+                <th>Double Wins</th>
+                <th>Total Wins</th>
+                <th>Active</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <h2>Add Player</h2>
+    <form id="addPlayerForm">
+        <label for="playerName">Player Name:</label>
+        <input type="text" id="playerName" name="playerName" required><br/>
+        <label for="playerBalance">Balance:</label>
+        <input type="number" id="playerBalance" name="playerBalance" step="0.05" required><br/>
+        <button type="submit">Add Player</button>
+    </form>
+
+    <h2>Update Winner</h2>
+    <form id="updateWinnerForm">
+        <label for="winnerName">Winner's Name:</label>
+        <input type="text" id="winnerName" name="winnerName" required><br/>
+        <label id='doublewin' for="doubleWin">Double Win:</label>
+        <label class="custom-checkbox">
+            <input type="checkbox" id="doubleWin" name="doubleWin">
+            <span class="checkbox-icon"></span>
+        </label>   
+        <br/>     
+        <button type="submit">Update Winner</button>
+    </form>
+    <br/>
+    <button onclick="clearData()">Clear Data</button>
+    <button onclick="undoLastWin()">Undo Last Win</button>
+
+    <script>
+        function formatCurrency(amount) {
+            const isNegative = amount < 0;
+            const absoluteAmount = Math.abs(amount);
+
+            const formattedAmount = '$' + parseFloat(absoluteAmount).toFixed(2);
+            return isNegative ? '-' + formattedAmount : formattedAmount;
+        }
+
+        async function loadPlayers() {
+            try {
+                const response = await fetch('/get_players');
+                const data = await response.json();
+                console.log('Fetched data:', data);
+
+                const tableBody = document.getElementById('players-table').getElementsByTagName('tbody')[0];
+                tableBody.innerHTML = ''; // Clear existing rows
+
+                Object.keys(data).forEach(player => {
+                    const row = tableBody.insertRow();
+                    row.insertCell(0).innerText = player;
+                    row.insertCell(1).innerText = formatCurrency(data[player]["Starting Balance"]);
+                    row.insertCell(2).innerText = formatCurrency(data[player]["Final Balance"]);
+                    row.insertCell(3).innerText = formatCurrency(data[player]["Net Balance"]);
+                    row.insertCell(4).innerText = data[player]["Single Wins"];
+                    row.insertCell(5).innerText = data[player]["Double Wins"];
+                    row.insertCell(6).innerText = data[player]["Total Wins"];
+                    row.insertCell(7).innerText = data[player]["Active"] ? "Yes" : "No";
+                    const actionsCell = row.insertCell(8); 
+                    const buttonLabel = data[player]["Active"] ? 'Leave' : 'Join';
+                    const leaveButton = document.createElement('button');
+                    leaveButton.innerText = buttonLabel;
+                    leaveButton.onclick = () => togglePlayerStatus(player, leaveButton);
+                    actionsCell.appendChild(leaveButton);
+                });
+            } catch (error) {
+                console.error('Error loading players:', error);
+            }
+        }
+        function togglePlayerStatus(player, button) {
+            if (button.innerText === 'Leave') {
+                deactivatePlayer(player);
+                button.innerText = 'Join';
+            } else if (button.innerText === 'Join') {
+                activatePlayer(player);
+                button.innerText = 'Leave';
+            }
+        }
+
+        async function deactivatePlayer(playerName) {
+            const response = await fetch('/deactivate_player', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name: playerName }),
+            });
+            const result = await response.json();
+            alert(result.status || result.error);
+            loadPlayers();
+        }
+
+        async function activatePlayer(playerName) {
+            const response = await fetch('/activate_player', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name: playerName }),
+            });
+            const result = await response.json();
+            alert(result.status || result.error);
+            loadPlayers();
+        }
+
+        document.getElementById('addPlayerForm').onsubmit = async function (event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const playerName = formData.get('playerName');
+            const playerBalance = parseFloat(formData.get('playerBalance'));
+            const response = await fetch('/add_player', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name: playerName, balance: playerBalance }),
+            });
+            const result = await response.json();
+            alert(result.status || result.error);
+            loadPlayers();
+        };
+
+        document.getElementById('updateWinnerForm').onsubmit = async function (event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const winnerName = formData.get('winnerName');
+            const doubleWin = formData.get('doubleWin') ? 2 : 1;
+            const response = await fetch('/update_winner', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ winner: winnerName, double: doubleWin }),
+            });
+            const result = await response.json();
+            alert(result.status || result.error);
+            loadPlayers();
+        };
+
+        async function clearData() {
+            const response = await fetch('/clear_data', {
+                method: 'POST',
+            });
+            const result = await response.json();
+            alert(result.status || result.error);
+            loadPlayers();
+        }
+
+        async function undoLastWin() {
+            const response = await fetch('/undo_last_win', {
+                method: 'POST',
+            });
+            const result = await response.json();
+            alert(result.status || result.error);
+            loadPlayers();
+        }
+
+        loadPlayers();
+    </script>
+</body>
+</html>

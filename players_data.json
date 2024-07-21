@@ -1,0 +1,47 @@
+{
+    "Dajie": {
+        "Starting Balance": 0,
+        "Final Balance": 0.4,
+        "Net Balance": 0.4,
+        "Single Wins": 0,
+        "Double Wins": 1,
+        "Total Wins": 1,
+        "Active": true
+    },
+    "Dage": {
+        "Starting Balance": 0,
+        "Final Balance": 1.4,
+        "Net Balance": 1.4,
+        "Single Wins": 1,
+        "Double Wins": 1,
+        "Total Wins": 2,
+        "Active": true
+    },
+    "Guama": {
+        "Starting Balance": 0,
+        "Final Balance": 0.4,
+        "Net Balance": 0.4,
+        "Single Wins": 0,
+        "Double Wins": 1,
+        "Total Wins": 1,
+        "Active": true
+    },
+    "Cynthia": {
+        "Starting Balance": 0,
+        "Final Balance": -1.6,
+        "Net Balance": -1.6,
+        "Single Wins": 0,
+        "Double Wins": 0,
+        "Total Wins": 0,
+        "Active": true
+    },
+    "Sing": {
+        "Starting Balance": 0,
+        "Final Balance": -0.6,
+        "Net Balance": -0.6,
+        "Single Wins": 1,
+        "Double Wins": 0,
+        "Total Wins": 1,
+        "Active": true
+    }
+}
