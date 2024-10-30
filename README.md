@@ -44,4 +44,4 @@ This application is maintained by `cadzchua`.
 
 ## License
 
-This project is licensed under the [MIT](https://choosealicense.com/licenses/mit/). You are free to use, modify, and distribute the software as per the terms of the license agreement.
+This project is licensed under the [MIT](LICENSE). You are free to use, modify, and distribute the software as per the terms of the license agreement.
